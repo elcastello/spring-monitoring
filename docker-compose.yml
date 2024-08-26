@@ -1,0 +1,98 @@
+services:
+  adm:
+    restart: on-failure:2
+    pull_policy: never
+    image: adm-backend
+    container_name: adm-backend
+    build:
+      context: ./adm
+      dockerfile: Dockerfile
+    environment:
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_NAME: Adm
+      DB_USER: admsys
+      DB_PASSWORD: "CtsRJW*R63R0"
+      app_jwt_secret: "AxIxBVKBKMrOFRlNsdZskI8t7yZjQz0p3/NG8UYYAKOdeLHOG8rFw1HbV5eWelVxZR23MeO05arOLhq49in/kxkL3B9hY9+5UMegsKtv+gF1IdwjdavMlWSTRkOBuNTS1au5YYq6Oh8sYI3f0re0/9U1W0u5bygaP+1jr4Jy0p+0jVyoF75p3MGZ9y33fQ4PlszgEoQ/BZG59JSbC/Q4oxZefiuvHEaZvgHylQ=="
+    ports:
+      - "5000:5000"
+    depends_on:
+      - adm-database
+      - prometheus
+      - smtp-server
+
+  adm-database:
+    image: mysql:8.0.39-oracle
+    container_name: mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: 123456
+      MYSQL_DATABASE: Adm
+      MYSQL_USER: admsys
+      MYSQL_PASSWORD: "CtsRJW*R63R0"
+    ports:
+      - "3306"
+    
+  prometheus:
+    image: prom/prometheus:latest@sha256:cafe963e591c872d38f3ea41ff8eb22cee97917b7c97b5c0ccd43a419f11f613
+    container_name: prometheus
+    volumes: 
+      - "./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml"
+      - "./prometheus/alert_rules.yml:/etc/prometheus/alert_rules.yml"
+    ports:
+      - "9090:9090"
+    depends_on:
+      - smtp-server
+      - alert-manager
+  
+  alert-manager:
+    image: prom/alertmanager:latest@sha256:e13b6ed5cb929eeaee733479dce55e10eb3bc2e9c4586c705a4e8da41e5eacf5
+    container_name: alert-manager
+    command:
+      - "--config.file=/etc/alertmanager/alertmanager.yml"
+    volumes:
+      - "./prometheus/alertmanager.yml:/etc/alertmanager/alertmanager.yml"
+    ports:
+      - "9093:9093"
+
+    depends_on:
+      - smtp-server
+
+  smtp-server:
+    image: marcopas/docker-mailslurper:latest@sha256:6ffa582222e0c52c0db325ba2b67e67c097f37ddf901f31540f5e19376d8a165
+    container_name: smtp-server
+    volumes:
+      - "./mailslurper/config.json:/opt/mailslurper/config.json"
+    ports:
+      - "5010:5010"
+      - "8085:8085"
+      - "2500:2500"
+  
+  # grafana:
+  #   image: grafana/grafana:main-ubuntu@sha256:30ad9527624e7a7ec0629382d0a5528eb218a8116fc14ba857aab6c84ff78f05
+  #   container_name: grafana
+  #   ports:
+  #     - "3000"
+  #   environment:
+  #     - GF_SECURITY_ADMIN_USER=admin
+  #     - GF_SECURITY_ADMIN_PASSWORD=admin
+  #   volumes:
+  #     - ./grafana:/etc/grafana/provisioning/datasources
+
+  # mysql-exporter-database:
+  #   image: mysql:8.0.39-oracle
+  #   container_name: mysql-exporter-database
+  #   environment:
+  #     MYSQL_ROOT_PASSWORD: 123456
+  #     MYSQL_DATABASE: exporter
+  #     MYSQL_USER: admsys
+  #     MYSQL_PASSWORD: "CtsRJW*R63R0"
+  #   ports:
+  #     - "3306"
+    
+  # mysql-exporter:
+  #   image: prom/mysqld-exporter:latest@sha256:7211a617ec657701ca819aa0ba28e1d5750f5bf2c1391b755cc4a48cc360b0fa
+  #   ports:
+  #     - "9104"
+    
+
+

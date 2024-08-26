@@ -1,0 +1,18 @@
+global:
+  resolve_timeout: 10s
+route:
+  group_by: ['alertname']
+  group_wait: 2s
+  group_interval: 10s
+  repeat_interval: 1h
+  receiver: 'local-smtp'
+receivers:
+- name: 'local-smtp'
+  email_configs:
+    - to: 'sys-issues@garden.com'
+      send_resolved: true
+      from: 'alert-app@garden.com'
+      smarthost: 'smtp-server:2500'
+      auth_username: 'alert@garden.com'
+      auth_password: '123456'
+      require_tls: false
